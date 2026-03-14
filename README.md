@@ -21,12 +21,21 @@ Open `.env` and fill in:
 ```bash
 # Your SSH public key — get it with: cat ~/.ssh/id_ed25519.pub
 SSH_PUBLIC_KEY=ssh-ed25519 AAAA...
-
-# Anthropic API key — get it at https://console.anthropic.com/
-ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-**2. Start**
+**2. Add your projects** — edit `projects.conf`:
+
+```
+# name          git-url
+api             https://github.com/acme/api
+frontend        https://github.com/acme/frontend
+infra           git@github.com:acme/infra.git
+```
+
+Each project gets its own tmux window and its own session in the Claude app.
+Leave the file empty to work in `/workspace` with a single session.
+
+**3. Start**
 
 ```bash
 docker compose up -d
@@ -71,7 +80,8 @@ On subsequent starts the session comes up automatically, no login needed.
 | Start | `docker compose up -d` |
 | See connection address | `docker compose logs claude` |
 | Connect | `ssh -p 2222 root@<host>` |
-| Attach to Claude | `tmux attach -t claude` |
+| Attach to tmux | `tmux attach -t claude` |
+| Switch between projects | `Ctrl-a w` |
 | Detach (leave running) | `Ctrl-a d` |
 | Stop | `docker compose down` |
 | Update image | `docker compose pull && docker compose up -d` |

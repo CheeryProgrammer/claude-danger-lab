@@ -9,7 +9,7 @@ services:
       dockerfile: Dockerfile
       args:
         # Pin Go version here; override with: docker compose build --build-arg GO_VERSION=x.y.z
-        GO_VERSION: "1.24.1"
+        GO_VERSION: "latest"
     container_name: claude-danger-lab
     restart: unless-stopped
 
@@ -43,6 +43,9 @@ services:
 
       # SSH host keys persist so the fingerprint never changes after first run
       - ssh-host-keys:/etc/ssh/host-keys
+
+      # Project list — edit projects.conf to define repos to work on
+      - ./projects.conf:/etc/danger-lab/projects.conf:ro
 
     # Resource limits – loosen or remove for resource-heavy tasks
     deploy:
