@@ -17,6 +17,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  GO_VERSION: "1.24.1"
 
 jobs:
   build:
@@ -58,14 +59,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Determine Go version
-        id: go_version
-        run: |
-          INPUT="${{ github.event.inputs.go_version }}"
-          # Fall back to the version pinned in docker-compose.yml
-          DEFAULT=$(grep 'GO_VERSION' docker-compose.yml | head -1 | grep -oP '"\K[^"]+')
-          echo "version=${INPUT:-$DEFAULT}" >> "$GITHUB_OUTPUT"
-
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v6
@@ -73,7 +66,7 @@ jobs:
           context: .
           platforms: ${{ matrix.platform }}
           build-args: |
-            GO_VERSION=${{ steps.go_version.outputs.version }}
+            GO_VERSION=${{ github.event.inputs.go_version || env.GO_VERSION }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
