@@ -46,7 +46,19 @@ setup_ssh_host_keys() {
     chmod 644 "${key_dir}"/ssh_host_*_key.pub
 }
 
-# ── 3. Claude auth env ────────────────────────────────────────────────────────
+# ── 3. GitHub authentication ─────────────────────────────────────────────────
+setup_github_auth() {
+    if [ -n "${GITHUB_TOKEN:-}" ]; then
+        export GITHUB_TOKEN
+        # Configure git to use the token for all github.com HTTPS operations
+        git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+        # Persist for interactive shells
+        printf 'export GITHUB_TOKEN=%s\n' "${GITHUB_TOKEN}" >> /etc/danger-lab.env
+        log "GitHub token configured for git and gh CLI."
+    fi
+}
+
+# ── 4. Claude auth env ────────────────────────────────────────────────────────
 setup_claude_auth() {
     if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
         export ANTHROPIC_API_KEY
@@ -228,6 +240,7 @@ main() {
     log "Starting claude-danger-lab…"
     setup_ssh_auth
     setup_ssh_host_keys
+    setup_github_auth
     setup_claude_auth
     setup_claude_memory
     setup_tmux_session

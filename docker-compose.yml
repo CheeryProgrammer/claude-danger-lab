@@ -26,6 +26,9 @@ services:
       # Method A (recommended): set ANTHROPIC_API_KEY in .env
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
 
+      # ── GitHub authentication ───────────────────────────────────────────────
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+
       # ── SSH port (used in the startup banner)
       - SSH_PORT=${SSH_PORT:-2222}
 
