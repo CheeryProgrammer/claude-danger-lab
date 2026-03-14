@@ -1,0 +1,30 @@
+# ── claude-danger-lab shell environment ───────────────────────────────────────
+
+# Go
+export PATH="/usr/local/go/bin:/root/go/bin:${PATH}"
+export GOPATH="/root/go"
+
+# Default to workspace
+if [ "$PWD" = "/" ] || [ "$PWD" = "/root" ]; then
+    cd /workspace
+fi
+
+# Useful aliases
+alias ll='ls -lah --color=auto'
+alias gs='git status'
+alias gl='git log --oneline -20'
+
+# Print attach hint when logging in over SSH (not inside tmux)
+if [ -z "$TMUX" ] && [ -n "$SSH_CLIENT" ]; then
+    echo ""
+    echo "  ┌─────────────────────────────────────────────┐"
+    echo "  │  claude-danger-lab                          │"
+    echo "  │                                             │"
+    echo "  │  Attach to Claude session:                  │"
+    echo "  │    tmux attach -t claude                    │"
+    echo "  │                                             │"
+    echo "  │  List sessions:  tmux ls                    │"
+    echo "  │  Detach:         Ctrl-a d                   │"
+    echo "  └─────────────────────────────────────────────┘"
+    echo ""
+fi

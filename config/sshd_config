@@ -1,0 +1,44 @@
+# claude-danger-lab SSH daemon configuration
+
+Port 22
+AddressFamily any
+ListenAddress 0.0.0.0
+
+# Use only the keys stored in the persistent volume so host fingerprint
+# survives container recreation.
+HostKey /etc/ssh/host-keys/ssh_host_ed25519_key
+HostKey /etc/ssh/host-keys/ssh_host_rsa_key
+
+# Preferred algorithms (modern, mobile-friendly)
+KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256
+Ciphers aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com,chacha20-poly1305@openssh.com
+MACs hmac-sha2-256,hmac-sha2-512,hmac-sha2-256-etm@openssh.com
+
+# Authentication
+PermitRootLogin prohibit-password
+PubkeyAuthentication yes
+AuthorizedKeysFile /root/.ssh/authorized_keys
+
+PasswordAuthentication no
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+KbdInteractiveAuthentication no
+
+# Allow environment variables to pass through (needed for ANTHROPIC_API_KEY)
+PermitUserEnvironment yes
+AcceptEnv LANG LC_* ANTHROPIC_API_KEY TERM COLORTERM
+
+# Improve mobile / high-latency connection reliability
+TCPKeepAlive yes
+ClientAliveInterval 60
+ClientAliveCountMax 10
+ServerAliveInterval 60
+
+# Security hardening
+X11Forwarding no
+AllowAgentForwarding yes
+AllowTcpForwarding yes
+PrintMotd no
+PrintLastLog yes
+
+UsePAM yes

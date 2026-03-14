@@ -1,0 +1,15 @@
+# Environment – contains secrets, never commit
+.env
+
+# Local workspace directory contents (keep the directory itself tracked)
+workspace/*
+!workspace/.gitkeep
+
+# macOS
+.DS_Store
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
