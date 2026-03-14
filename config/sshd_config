@@ -32,7 +32,6 @@ AcceptEnv LANG LC_* ANTHROPIC_API_KEY TERM COLORTERM
 TCPKeepAlive yes
 ClientAliveInterval 60
 ClientAliveCountMax 10
-ServerAliveInterval 60
 
 # Security hardening
 X11Forwarding no
