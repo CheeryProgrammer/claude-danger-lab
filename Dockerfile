@@ -87,6 +87,26 @@ RUN ARCH=$(dpkg --print-architecture | sed 's/amd64/amd64/;s/arm64/arm64/') \
     && curl -fsSL "https://github.com/golang-migrate/migrate/releases/download/v${MIG_VERSION}/migrate.linux-${ARCH}.tar.gz" \
     | tar -xz -C /usr/local/bin migrate
 
+# ── Flutter ───────────────────────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        xz-utils \
+        libglu1-mesa \
+        unzip \
+        libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --depth 1 --branch stable \
+        https://github.com/flutter/flutter.git /opt/flutter
+
+ENV PATH="/opt/flutter/bin:${PATH}"
+ENV FLUTTER_ROOT="/opt/flutter"
+ENV PUB_CACHE="/root/.pub-cache"
+
+# Pre-download Dart SDK and web artifacts; skip mobile/desktop platforms
+RUN flutter precache --web --no-android --no-ios --no-linux --no-macos --no-windows \
+    && flutter config --no-analytics \
+    && flutter --version
+
 # ── Claude Code ───────────────────────────────────────────────────────────────
 RUN npm install -g @anthropic-ai/claude-code
 
