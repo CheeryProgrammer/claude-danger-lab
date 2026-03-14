@@ -1,9 +1,8 @@
 # Environment – contains secrets, never commit
 .env
 
-# Local workspace directory contents (keep the directory itself tracked)
-workspace/*
-!workspace/.gitkeep
+# Local workspace directory (if using WORKSPACE_PATH bind mount)
+workspace/
 
 # macOS
 .DS_Store
