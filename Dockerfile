@@ -60,6 +60,8 @@ RUN ARCH=$(dpkg --print-architecture) \
 
 ENV PATH="/usr/local/go/bin:/root/go/bin:${PATH}"
 ENV GOPATH="/root/go"
+# auto: use toolchain version from go.mod if it differs from the installed one
+ENV GOTOOLCHAIN=auto
 
 # ── Claude Code ───────────────────────────────────────────────────────────────
 RUN npm install -g @anthropic-ai/claude-code
