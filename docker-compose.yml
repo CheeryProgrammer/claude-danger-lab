@@ -47,6 +47,9 @@ services:
       # Project list — edit projects.conf to define repos to work on
       - ./projects.conf:/etc/danger-lab/projects.conf:ro
 
+      # Instructions — global.md + per-project <name>.md
+      - ./instructions:/etc/danger-lab/instructions:ro
+
     # Resource limits – loosen or remove for resource-heavy tasks
     deploy:
       resources:

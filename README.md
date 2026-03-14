@@ -88,6 +88,44 @@ On subsequent starts the session comes up automatically, no login needed.
 
 ---
 
+## Instructions
+
+Claude Code reads `CLAUDE.md` files automatically. danger-lab maps them to files in the `instructions/` directory.
+
+### Global instructions — `instructions/global.md`
+
+Applied to **every** Claude session across all projects. Good for:
+
+- Development workflow and process steps
+- Cross-project coding standards
+- Communication preferences
+
+```markdown
+# instructions/global.md
+
+## Development workflow
+1. Understand the task scope before touching anything.
+2. Run existing tests first, fix failures before adding new code.
+3. Commit with a message explaining *why*, not just *what*.
+```
+
+### Per-project instructions — `instructions/<name>.md`
+
+`<name>` must match the session name in `projects.conf`. Applied to that project's `CLAUDE.md` **only if the repo doesn't already have one**.
+
+```
+instructions/
+  global.md        ← all sessions
+  api.md           ← project named "api" in projects.conf
+  frontend.md      ← project named "frontend"
+```
+
+If the repo already has its own `CLAUDE.md` committed, it is left untouched (the repo's instructions win).
+
+Changes to instruction files take effect on the next `docker compose restart`.
+
+---
+
 ## Authentication
 
 ### Claude Code — required for remote control

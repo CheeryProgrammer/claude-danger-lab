@@ -56,9 +56,36 @@ setup_claude_auth() {
     # On first run, attach to the tmux session and type: /login
 }
 
-# ── 4. Claude memory directory ────────────────────────────────────────────────
+# ── 4. Claude memory directory + global instructions ─────────────────────────
 setup_claude_memory() {
     mkdir -p /root/.claude
+
+    # Global instructions → ~/.claude/CLAUDE.md
+    # Loaded by every Claude session across all projects.
+    local global_src="/etc/danger-lab/instructions/global.md"
+    if [ -f "${global_src}" ]; then
+        cp "${global_src}" /root/.claude/CLAUDE.md
+        log "Global instructions loaded from instructions/global.md"
+    fi
+}
+
+# ── 5a. Per-project instructions ──────────────────────────────────────────────
+# If instructions/<name>.md exists and the project has no CLAUDE.md yet,
+# copy it in.  If the repo already has its own CLAUDE.md, don't overwrite it.
+apply_project_instructions() {
+    local name="$1"
+    local project_dir="/workspace/${name}"
+    local src="/etc/danger-lab/instructions/${name}.md"
+    local dst="${project_dir}/CLAUDE.md"
+
+    [ -f "${src}" ] || return 0   # no per-project file, nothing to do
+
+    if [ -f "${dst}" ]; then
+        log "[${name}] Repo already has CLAUDE.md — skipping instructions/${name}.md"
+    else
+        cp "${src}" "${dst}"
+        log "[${name}] Project instructions applied from instructions/${name}.md"
+    fi
 }
 
 # ── 5. Projects ───────────────────────────────────────────────────────────────
@@ -136,6 +163,7 @@ setup_tmux_session() {
         [ -z "${name}" ] || [ -z "${url}" ] && continue
 
         ensure_cloned "${name}" "${url}" || continue
+        apply_project_instructions "${name}"
         start_claude_window "${session}" "${name}" "/workspace/${name}" "${first}"
         first=false
     done <<< "${projects}"
