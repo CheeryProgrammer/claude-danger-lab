@@ -32,13 +32,11 @@ ANTHROPIC_API_KEY=sk-ant-...
 docker compose up -d
 ```
 
-**3. Get the connection address from logs**
+**3. Get the SSH address from logs**
 
 ```bash
 docker compose logs claude
 ```
-
-You'll see something like:
 
 ```
 ╔══════════════════════════════════════════════════════╗
@@ -52,7 +50,17 @@ You'll see something like:
 ╚══════════════════════════════════════════════════════╝
 ```
 
-Copy the SSH command, run it, attach to tmux — Claude is already running inside in dangerous mode.
+**4. SSH in, attach to tmux, log in to claude.ai** *(first run only)*
+
+```bash
+ssh -p 2222 root@<address>
+tmux attach -t claude
+# inside Claude: type /login and follow the browser link
+```
+
+After login, Claude displays a session URL and QR code — open it from your phone and go.
+
+On subsequent starts the session comes up automatically, no login needed.
 
 ---
 
@@ -72,17 +80,22 @@ Copy the SSH command, run it, attach to tmux — Claude is already running insid
 
 ## Authentication
 
-### Claude Code
+### Claude Code — required for remote control
 
-**API key** — set `ANTHROPIC_API_KEY` in `.env`. Automatically picked up on start.
-
-**Interactive login** — leave `ANTHROPIC_API_KEY` empty, then inside the tmux session:
+Remote Control requires a **claude.ai account** (Pro, Max, Team, or Enterprise), not an API key. On first start, attach to the tmux session and log in:
 
 ```bash
-claude login
+tmux attach -t claude   # inside the container
+# Claude will prompt: type /login and follow the browser link
 ```
 
-Auth state is saved in a Docker volume and survives restarts.
+Auth state is saved in a Docker volume — you only do this once.
+
+After login, `claude remote-control` displays a session URL and QR code.
+Open the URL or scan the code from the Claude mobile app to connect.
+
+> **API key** (`ANTHROPIC_API_KEY` in `.env`) is still useful for other Claude Code
+> operations but does not enable Remote Control.
 
 ### GitHub CLI
 

@@ -73,9 +73,13 @@ setup_tmux_session() {
 
     tmux new-session -d -s "${session}" -x 220 -y 50
     tmux send-keys -t "${session}" "cd /workspace" Enter
+    # remote-control: server mode — accepts connections from claude.ai and mobile app
     # --dangerously-skip-permissions: no approval prompts, full autonomy
-    tmux send-keys -t "${session}" "claude --dangerously-skip-permissions" Enter
-    log "Claude Code started in dangerous mode inside tmux session '${session}'."
+    # Note: remote-control requires claude.ai login (not API key). If not yet
+    # authenticated, attach to this session and run: claude login
+    tmux send-keys -t "${session}" \
+        "claude --dangerously-skip-permissions remote-control --name 'danger-lab'" Enter
+    log "Claude Code started in remote-control server mode (tmux session '${session}')."
 }
 
 # ── 6. Connection banner ──────────────────────────────────────────────────────

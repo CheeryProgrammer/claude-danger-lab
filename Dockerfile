@@ -1,7 +1,9 @@
 FROM ubuntu:22.04
 
 # ── Build args ────────────────────────────────────────────────────────────────
-ARG GO_VERSION=1.24.2
+# GO_VERSION: pin a specific release (e.g. 1.24.2) or leave as "latest" to
+# auto-detect the current stable release from go.dev at build time.
+ARG GO_VERSION=latest
 ARG NODE_MAJOR=20
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -48,6 +50,10 @@ RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
 
 # ── Go ────────────────────────────────────────────────────────────────────────
 RUN ARCH=$(dpkg --print-architecture) \
+    && if [ "${GO_VERSION}" = "latest" ]; then \
+         GO_VERSION=$(curl -fsSL "https://go.dev/VERSION?m=text" | head -1 | sed 's/go//'); \
+       fi \
+    && echo "Installing Go ${GO_VERSION}" \
     && wget -q "https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz" \
     && tar -C /usr/local -xzf "go${GO_VERSION}.linux-${ARCH}.tar.gz" \
     && rm "go${GO_VERSION}.linux-${ARCH}.tar.gz"
