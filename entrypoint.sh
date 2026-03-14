@@ -6,7 +6,12 @@ log()  { echo "[danger-lab] $*"; }
 warn() { echo "[danger-lab] WARN: $*" >&2; }
 
 PROJECTS_CONF="/etc/danger-lab/projects.conf"
-CLAUDE_CMD="claude --dangerously-skip-permissions remote-control"
+DANGEROUS="${DANGEROUS_MODE:-false}"
+if [ "${DANGEROUS}" = "true" ]; then
+    CLAUDE_CMD="claude --dangerously-skip-permissions remote-control"
+else
+    CLAUDE_CMD="claude remote-control"
+fi
 
 # ── 1. SSH authorised keys ────────────────────────────────────────────────────
 setup_ssh_auth() {

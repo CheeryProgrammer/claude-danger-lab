@@ -29,6 +29,9 @@ services:
       # ── SSH port (used in the startup banner)
       - SSH_PORT=${SSH_PORT:-2222}
 
+      # ── Dangerous mode: skip all permission prompts (default: false)
+      - DANGEROUS_MODE=${DANGEROUS_MODE:-false}
+
       # ── Terminal ───────────────────────────────────────────────────────────────
       - TERM=xterm-256color
       - COLORTERM=truecolor
