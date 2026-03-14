@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 # ── Build args ────────────────────────────────────────────────────────────────
-ARG GO_VERSION=1.24.1
+ARG GO_VERSION=1.24.2
 ARG NODE_MAJOR=20
 ARG DEBIAN_FRONTEND=noninteractive
 

@@ -5,24 +5,44 @@ on:
     branches:
       - main
   schedule:
-    # Rebuild weekly (Sunday 02:00 UTC) to pick up Claude Code and system updates
+    # Rebuild weekly (Sunday 02:00 UTC) to pick up Claude Code updates
     - cron: "0 2 * * 0"
   workflow_dispatch:
     inputs:
       go_version:
-        description: "Go version to build with (leave blank for default)"
+        description: "Go version (leave blank to auto-detect latest stable)"
         required: false
         default: ""
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  GO_VERSION: "1.24.1"
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+      go_version: ${{ steps.go.outputs.version }}
+    steps:
+      # Docker registry requires lowercase image names
+      - name: Lowercase image name
+        id: image
+        run: echo "name=${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve Go version
+        id: go
+        run: |
+          VERSION="${{ github.event.inputs.go_version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION=$(curl -fsSL "https://go.dev/VERSION?m=text" | head -1 | sed 's/go//')
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Using Go $VERSION"
+
   build:
     name: Build (${{ matrix.platform }})
     runs-on: ${{ matrix.runner }}
+    needs: prepare
     permissions:
       contents: read
       packages: write
@@ -33,8 +53,10 @@ jobs:
         include:
           - platform: linux/amd64
             runner: ubuntu-latest
+            arch: amd64
           - platform: linux/arm64
             runner: ubuntu-24.04-arm
+            arch: arm64
 
     steps:
       - name: Checkout
@@ -51,7 +73,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.image }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=sha-,format=short
@@ -66,11 +88,11 @@ jobs:
           context: .
           platforms: ${{ matrix.platform }}
           build-args: |
-            GO_VERSION=${{ github.event.inputs.go_version || env.GO_VERSION }}
+            GO_VERSION=${{ needs.prepare.outputs.go_version }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }},mode=max
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ needs.prepare.outputs.image }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ needs.prepare.outputs.image }}:buildcache-${{ matrix.arch }}
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ needs.prepare.outputs.image }}:buildcache-${{ matrix.arch }},mode=max
 
       - name: Export digest
         run: |
@@ -81,7 +103,7 @@ jobs:
       - name: Upload digest artifact
         uses: actions/upload-artifact@v4
         with:
-          name: digest-${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
+          name: digest-${{ matrix.arch }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -89,7 +111,7 @@ jobs:
   merge:
     name: Merge multi-platform manifest
     runs-on: ubuntu-latest
-    needs: build
+    needs: [prepare, build]
     permissions:
       contents: read
       packages: write
@@ -113,7 +135,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.image }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=sha-,format=short
@@ -126,9 +148,9 @@ jobs:
         run: |
           docker buildx imagetools create \
             $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+            $(printf '${{ env.REGISTRY }}/${{ needs.prepare.outputs.image }}@sha256:%s ' *)
 
       - name: Inspect final image
         run: |
           docker buildx imagetools inspect \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+            ${{ env.REGISTRY }}/${{ needs.prepare.outputs.image }}:${{ steps.meta.outputs.version }}
