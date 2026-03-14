@@ -1,12 +1,15 @@
 services:
   claude:
+    # Prebuilt image from GitHub Container Registry.
+    # docker compose pull   – update to the latest published image
+    # docker compose build  – build locally from source instead
+    image: ghcr.io/cheeryprogrammer/claude-danger-lab:latest
     build:
       context: .
       dockerfile: Dockerfile
       args:
         # Pin Go version here; override with: docker compose build --build-arg GO_VERSION=x.y.z
         GO_VERSION: "1.24.1"
-    image: claude-danger-lab:latest
     container_name: claude-danger-lab
     restart: unless-stopped
 

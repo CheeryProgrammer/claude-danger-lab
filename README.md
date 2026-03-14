@@ -1,5 +1,7 @@
 # claude-danger-lab
 
+[![Build](https://github.com/CheeryProgrammer/claude-danger-lab/actions/workflows/build.yml/badge.svg)](https://github.com/CheeryProgrammer/claude-danger-lab/actions/workflows/build.yml)
+
 An isolated, persistent runtime for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) — safe-by-default infrastructure for dangerous-by-design AI-assisted development sessions.
 
 **Intended workflow:**
@@ -54,13 +56,25 @@ cat ~/.ssh/id_ed25519.pub   # or id_rsa.pub / id_ecdsa.pub
 
 Get an Anthropic API key at <https://console.anthropic.com/>.
 
-### 3. Build and start
+### 3. Start (using prebuilt image)
+
+```bash
+docker compose up -d
+```
+
+A prebuilt multi-platform image (`amd64` + `arm64`) is published to GitHub Container Registry on every commit to `main` and rebuilt weekly. No local build needed.
+
+To update to the latest image:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+**Build from source** (optional — if you want to customise the image):
 
 ```bash
 docker compose up -d --build
 ```
-
-The first build takes a few minutes (Go + Node.js + Claude Code install).
 
 ### 4. SSH into the container
 
