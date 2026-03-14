@@ -19,6 +19,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         openssh-server \
         locales \
+        postgresql-client \
+        jq \
     && locale-gen en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -62,6 +64,28 @@ ENV PATH="/usr/local/go/bin:/root/go/bin:${PATH}"
 ENV GOPATH="/root/go"
 # auto: use toolchain version from go.mod if it differs from the installed one
 ENV GOTOOLCHAIN=auto
+
+# ── Go tools ─────────────────────────────────────────────────────────────────
+# goimports: import formatter
+RUN go install golang.org/x/tools/cmd/goimports@latest
+
+# golangci-lint: linter aggregator (latest version via official installer)
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
+    | sh -s -- -b /usr/local/bin
+
+# sqlc: SQL → Go code generator (latest release)
+RUN ARCH=$(dpkg --print-architecture | sed 's/amd64/amd64/;s/arm64/arm64/') \
+    && SQLC_VERSION=$(curl -fsSL https://api.github.com/repos/sqlc-dev/sqlc/releases/latest \
+        | jq -r '.tag_name' | sed 's/v//') \
+    && curl -fsSL "https://github.com/sqlc-dev/sqlc/releases/download/v${SQLC_VERSION}/sqlc_${SQLC_VERSION}_linux_${ARCH}.tar.gz" \
+    | tar -xz -C /usr/local/bin sqlc
+
+# golang-migrate: database migrations CLI (latest release, postgres + file support)
+RUN ARCH=$(dpkg --print-architecture | sed 's/amd64/amd64/;s/arm64/arm64/') \
+    && MIG_VERSION=$(curl -fsSL https://api.github.com/repos/golang-migrate/migrate/releases/latest \
+        | jq -r '.tag_name' | sed 's/v//') \
+    && curl -fsSL "https://github.com/golang-migrate/migrate/releases/download/v${MIG_VERSION}/migrate.linux-${ARCH}.tar.gz" \
+    | tar -xz -C /usr/local/bin migrate
 
 # ── Claude Code ───────────────────────────────────────────────────────────────
 RUN npm install -g @anthropic-ai/claude-code
