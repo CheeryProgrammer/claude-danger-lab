@@ -2,7 +2,9 @@
 
 [![Build](https://github.com/CheeryProgrammer/claude-danger-lab/actions/workflows/build.yml/badge.svg)](https://github.com/CheeryProgrammer/claude-danger-lab/actions/workflows/build.yml)
 
-Isolated Docker container for running [Claude Code](https://docs.anthropic.com/en/docs/claude-code) in dangerous mode — no permission prompts, full autonomy, persistent sessions. Connect from anywhere over SSH.
+> **Disclaimer:** This project gives Claude Code broad, unsupervised access to your files, shell, and network inside the container. You take full responsibility for anything it does. The authors provide no warranty and accept no liability for data loss, security incidents, or any other damage. Use at your own risk.
+
+Run [Claude Code](https://docs.anthropic.com/en/docs/claude-code) in an isolated Docker container. SSH in from anywhere, attach to tmux, and control Claude remotely — including from your phone via the Claude app.
 
 ---
 
@@ -12,162 +14,88 @@ Isolated Docker container for running [Claude Code](https://docs.anthropic.com/e
 curl -fsSL https://raw.githubusercontent.com/CheeryProgrammer/claude-danger-lab/main/install.sh | bash
 ```
 
-Creates a `claude-danger-lab/` directory with everything you need and prints next steps.
+Creates `claude-danger-lab/` with all required files and prints what to do next.
 
 ---
 
-## Manual setup
+## First-time setup
 
-**1. Clone and configure**
+**1. Fill in `.env`**
 
 ```bash
-git clone https://github.com/CheeryProgrammer/claude-danger-lab.git
 cd claude-danger-lab
-cp .env.example .env
+$EDITOR .env
 ```
 
-Open `.env` and fill in:
+| Variable | What to put |
+|----------|-------------|
+| `SSH_PUBLIC_KEY` | Output of `cat ~/.ssh/id_ed25519.pub` |
+| `ANTHROPIC_API_KEY` | From [console.anthropic.com](https://console.anthropic.com/) *(optional)* |
+| `DANGEROUS_MODE` | `true` to skip all permission prompts, `false` to keep them |
 
-```bash
-# Your SSH public key — get it with: cat ~/.ssh/id_ed25519.pub
-SSH_PUBLIC_KEY=ssh-ed25519 AAAA...
+**2. Add projects to `projects.conf`** *(optional)*
+
 ```
-
-**2. Add your projects** — edit `projects.conf`:
-
-```
-# name          git-url
-api             https://github.com/acme/api
-frontend        https://github.com/acme/frontend
-infra           git@github.com:acme/infra.git
+# name       git-url
+api          https://github.com/you/api
+frontend     https://github.com/you/frontend
 ```
 
 Each project gets its own tmux window and its own session in the Claude app.
-Leave the file empty to work in `/workspace` with a single session.
+Leave the file empty to use a single session in `/workspace`.
 
 **3. Start**
 
 ```bash
 docker compose up -d
+docker compose logs claude   # shows SSH address
 ```
 
-**3. Get the SSH address from logs**
-
-```bash
-docker compose logs claude
-```
-
-```
-╔══════════════════════════════════════════════════════╗
-║           claude-danger-lab  is  ready!              ║
-╠══════════════════════════════════════════════════════╣
-║  Public:   ssh -p 2222 root@203.0.113.42             ║
-║  Local:    ssh -p 2222 root@192.168.1.5              ║
-║                                                      ║
-║  After connecting:   tmux attach -t claude           ║
-║  Detach:             Ctrl-a d                        ║
-╚══════════════════════════════════════════════════════╝
-```
-
-**4. SSH in, attach to tmux, log in to claude.ai** *(first run only)*
+**4. Log in to claude.ai** *(first run only — required for remote control)*
 
 ```bash
 ssh -p 2222 root@<address>
 tmux attach -t claude
-# inside Claude: type /login and follow the browser link
+# inside Claude: /login  → follow the browser link
 ```
 
-After login, Claude displays a session URL and QR code — open it from your phone and go.
-
-On subsequent starts the session comes up automatically, no login needed.
+After login, Claude shows a session URL and QR code. Open it on your phone — done.
+Auth is saved in a volume and persists across restarts.
 
 ---
 
 ## Daily use
 
-| What | Command |
-|------|---------|
-| Start | `docker compose up -d` |
-| See connection address | `docker compose logs claude` |
-| Connect | `ssh -p 2222 root@<host>` |
-| Attach to tmux | `tmux attach -t claude` |
-| Switch between projects | `Ctrl-a w` |
-| Detach (leave running) | `Ctrl-a d` |
-| Stop | `docker compose down` |
-| Update image | `docker compose pull && docker compose up -d` |
-
----
-
-## Instructions
-
-Claude Code reads `CLAUDE.md` files automatically. danger-lab maps them to files in the `instructions/` directory.
-
-### Global instructions — `instructions/global.md`
-
-Applied to **every** Claude session across all projects. Good for:
-
-- Development workflow and process steps
-- Cross-project coding standards
-- Communication preferences
-
-```markdown
-# instructions/global.md
-
-## Development workflow
-1. Understand the task scope before touching anything.
-2. Run existing tests first, fix failures before adding new code.
-3. Commit with a message explaining *why*, not just *what*.
-```
-
-### Per-project instructions — `instructions/<name>.md`
-
-`<name>` must match the session name in `projects.conf`. Applied to that project's `CLAUDE.md` **only if the repo doesn't already have one**.
-
-```
-instructions/
-  global.md        ← all sessions
-  api.md           ← project named "api" in projects.conf
-  frontend.md      ← project named "frontend"
-```
-
-If the repo already has its own `CLAUDE.md` committed, it is left untouched (the repo's instructions win).
-
-Changes to instruction files take effect on the next `docker compose restart`.
-
----
-
-## Authentication
-
-### Claude Code — required for remote control
-
-Remote Control requires a **claude.ai account** (Pro, Max, Team, or Enterprise), not an API key. On first start, attach to the tmux session and log in:
-
 ```bash
-tmux attach -t claude   # inside the container
-# Claude will prompt: type /login and follow the browser link
-```
-
-Auth state is saved in a Docker volume — you only do this once.
-
-After login, `claude remote-control` displays a session URL and QR code.
-Open the URL or scan the code from the Claude mobile app to connect.
-
-> **API key** (`ANTHROPIC_API_KEY` in `.env`) is still useful for other Claude Code
-> operations but does not enable Remote Control.
-
-### GitHub CLI
-
-Run inside the container after connecting:
-
-```bash
-gh auth login
+docker compose up -d                      # start
+docker compose logs claude                # get SSH address
+ssh -p 2222 root@<host>                   # connect
+tmux attach -t claude                     # attach to Claude
+# Ctrl-a w  — switch between projects
+# Ctrl-a d  — detach (Claude keeps running)
+docker compose down                       # stop
+docker compose pull && docker compose up -d  # update
 ```
 
 ---
 
-## SSH tips
+## Instructions for Claude
 
-Add to `~/.ssh/config` to skip typing the port every time:
+Claude reads `CLAUDE.md` files automatically. Place yours in `instructions/`:
+
+| File | Scope |
+|------|-------|
+| `instructions/global.md` | All sessions, all projects |
+| `instructions/<name>.md` | One project (name matches `projects.conf`) |
+
+Per-project files are only applied if the repo doesn't already have its own `CLAUDE.md`.
+Changes take effect after `docker compose restart`.
+
+---
+
+## SSH config shortcut
+
+Add to `~/.ssh/config`:
 
 ```
 Host danger-lab
@@ -178,64 +106,26 @@ Host danger-lab
     ServerAliveInterval 60
 ```
 
-**Mobile:** Termius (iOS/Android) or Blink Shell (iOS) — port `2222`, user `root`, your private key.
-
----
-
-## tmux reference
-
-Prefix is `Ctrl-a`.
-
-| Keys | Action |
-|------|--------|
-| `Ctrl-a d` | Detach — Claude keeps running |
-| `Ctrl-a c` | New window |
-| `Ctrl-a \|` | Split pane vertically |
-| `Ctrl-a -` | Split pane horizontally |
-| `Ctrl-a h/j/k/l` | Navigate panes |
-
-Mouse is enabled.
+Then just `ssh danger-lab`. Mobile: Termius or Blink Shell, same settings.
 
 ---
 
 ## Troubleshooting
 
-**No connection address in logs**
-
-```bash
-docker compose logs claude   # check for errors
-docker compose ps            # check container is running
-```
-
-**SSH key rejected**
-
-```bash
-docker compose exec claude cat /root/.ssh/authorized_keys
-```
-
-**"Host key changed" warning** — happens after `docker compose down -v`:
-
-```bash
-ssh-keygen -R "[localhost]:2222"
-```
-
-**Claude not authenticated**
-
-```bash
-# Connect and run:
-claude login
-```
+| Problem | Fix |
+|---------|-----|
+| No SSH address in logs | `docker compose ps` — is the container running? |
+| SSH key rejected | `docker compose exec claude cat /root/.ssh/authorized_keys` |
+| "Host key changed" | `ssh-keygen -R "[localhost]:2222"` — happens after `down -v` |
+| Claude not logged in | Attach to tmux and run `/login` |
 
 ---
 
 ## What's inside
 
-Ubuntu 22.04 · tmux · git · gh · curl · build-essential · Go (latest stable) · Node.js · Claude Code · OpenSSH
+Ubuntu 22.04 · tmux · git · gh · Go (latest) · Node.js · Claude Code · OpenSSH
 
-Persistent data:
-- `/workspace` — your project files (host bind mount)
-- `/root/.claude` — Claude memory and auth (named volume)
-- `/etc/ssh/host-keys` — SSH host keys, stable fingerprint (named volume)
+Persistent volumes: `claude-memory` (`~/.claude`) · `ssh-host-keys` (`/etc/ssh/host-keys`) · workspace (bind mount)
 
 ---
 
