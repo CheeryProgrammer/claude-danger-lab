@@ -6,7 +6,17 @@ Isolated Docker container for running [Claude Code](https://docs.anthropic.com/e
 
 ---
 
-## Setup
+## Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/CheeryProgrammer/claude-danger-lab/main/install.sh | bash
+```
+
+Creates a `claude-danger-lab/` directory with everything you need and prints next steps.
+
+---
+
+## Manual setup
 
 **1. Clone and configure**
 
