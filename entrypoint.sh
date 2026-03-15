@@ -136,7 +136,7 @@ ensure_cloned() {
         return 0
     fi
     log "[${name}] Cloning ${url}…"
-    if sudo -u "${LAB_USER}" git clone "${url}" "${dir}"; then
+    if su - "${LAB_USER}" -c "git clone '${url}' '${dir}'"; then
         log "[${name}] Cloned OK."
     else
         warn "[${name}] git clone failed — skipping."
