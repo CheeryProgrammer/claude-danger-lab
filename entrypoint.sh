@@ -8,7 +8,7 @@ warn() { echo "[danger-lab] WARN: $*" >&2; }
 PROJECTS_CONF="/etc/danger-lab/projects.conf"
 DANGEROUS="${DANGEROUS_MODE:-false}"
 if [ "${DANGEROUS}" = "true" ]; then
-    CLAUDE_CMD="claude --dangerously-skip-permissions remote-control"
+    CLAUDE_CMD="claude remote-control --permission-mode bypassPermissions"
 else
     CLAUDE_CMD="claude remote-control"
 fi
