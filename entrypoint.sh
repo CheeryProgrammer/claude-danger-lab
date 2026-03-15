@@ -135,9 +135,11 @@ ensure_cloned() {
 # Run a command as lab user in a tmux window
 tmux_run_as_lab() {
     local target="$1" dir="$2" cmd="$3"
-    # su preserves the env file via lab's .bashrc
-    tmux send-keys -t "${target}" \
-        "su - ${LAB_USER} -c 'cd ${dir} && ${cmd}'" Enter
+    # Switch to lab user's login shell first, then run the command.
+    # Two-step so the window stays as lab's shell if claude exits.
+    tmux send-keys -t "${target}" "su - ${LAB_USER}" Enter
+    sleep 0.5
+    tmux send-keys -t "${target}" "cd ${dir} && ${cmd}" Enter
 }
 
 start_claude_window() {
