@@ -87,6 +87,18 @@ setup_claude_memory() {
         chown "${LAB_USER}:${LAB_USER}" "${LAB_HOME}/.claude/CLAUDE.md"
         log "Global instructions loaded."
     fi
+
+    # .claude.json lives outside the volume — restore from backup if missing
+    local cfg="${LAB_HOME}/.claude.json"
+    if [ ! -f "${cfg}" ]; then
+        local latest
+        latest=$(ls -t "${LAB_HOME}/.claude/backups/.claude.json.backup."* 2>/dev/null | head -1)
+        if [ -n "${latest}" ]; then
+            cp "${latest}" "${cfg}"
+            chown "${LAB_USER}:${LAB_USER}" "${cfg}"
+            log "Restored Claude config from backup."
+        fi
+    fi
 }
 
 # ── 6. Workspace ownership ────────────────────────────────────────────────────
