@@ -68,7 +68,7 @@ setup_github_auth() {
     if [ -n "${GITHUB_TOKEN:-}" ]; then
         # Configure for both root and lab user
         for home in /root "${LAB_HOME}"; do
-            git config --global --file "${home}/.gitconfig" \
+            git config --file "${home}/.gitconfig" \
                 url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf \
                 "https://github.com/"
         done
