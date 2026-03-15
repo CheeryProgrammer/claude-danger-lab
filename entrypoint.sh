@@ -168,28 +168,11 @@ start_claude_window() {
 
 # ── 9. tmux session ───────────────────────────────────────────────────────────
 setup_tmux_session() {
+    local session="claude"
+    tmux new-session -d -s "${session}" -x 220 -y 50
+
     local projects
     projects=$(read_projects)
-
-    # Single project → name the tmux session after it; multiple → "claude"
-    local project_count=0
-    local first_name=""
-    while IFS= read -r line; do
-        local n
-        n=$(awk '{print $1}' <<< "${line}")
-        [ -z "${n}" ] && continue
-        project_count=$((project_count + 1))
-        [ -z "${first_name}" ] && first_name="${n}"
-    done <<< "${projects}"
-
-    local session
-    if [ "${project_count}" -eq 1 ]; then
-        session="${first_name}"
-    else
-        session="claude"
-    fi
-
-    tmux new-session -d -s "${session}" -x 220 -y 50
 
     if [ -z "${projects}" ]; then
         log "No projects configured — using /workspace."
@@ -239,10 +222,8 @@ print_connection_info() {
     [ -n "${local_ip}" ] && \
     echo "║  Local:    ssh -p ${port} root@${local_ip}"
     echo "║                                                      ║"
-    local tmux_session
-    tmux_session=$(tmux list-sessions -F '#{session_name}' 2>/dev/null | head -1 || echo "claude")
     printf  "║  Projects: %-41s║\n" "${project_count} session(s) starting"
-    printf  "║  Attach:   %-41s║\n" "tmux attach -t ${tmux_session}"
+    echo "║  Attach:   tmux attach -t claude                     ║"
     echo "║  Windows:  Ctrl-a w  (switch between projects)       ║"
     echo "║  Detach:   Ctrl-a d                                  ║"
     echo "╚══════════════════════════════════════════════════════╝"
