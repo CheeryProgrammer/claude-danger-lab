@@ -123,7 +123,8 @@ RUN echo 'export PATH="/usr/local/go/bin:/home/lab/go/bin:/opt/flutter/bin:$PATH
     && echo 'export GOTOOLCHAIN=auto' >> /home/lab/.bashrc \
     && echo 'export FLUTTER_ROOT="/opt/flutter"' >> /home/lab/.bashrc \
     && echo 'export PUB_CACHE="/home/lab/.pub-cache"' >> /home/lab/.bashrc \
-    && echo '[ -f /etc/danger-lab.env ] && . /etc/danger-lab.env' >> /home/lab/.bashrc
+    && echo '[ -f /etc/danger-lab.env ] && . /etc/danger-lab.env' >> /home/lab/.bashrc \
+    && echo '[ -f ~/.bashrc ] && . ~/.bashrc' >> /home/lab/.bash_profile
 
 # ── SSH configuration ─────────────────────────────────────────────────────────
 RUN mkdir -p /var/run/sshd /etc/ssh/host-keys /root/.ssh \
