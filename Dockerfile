@@ -124,9 +124,6 @@ RUN echo 'export PATH="/usr/local/go/bin:/home/lab/go/bin:/opt/flutter/bin:$PATH
     && echo 'export PUB_CACHE="/home/lab/.pub-cache"' >> /home/lab/.bashrc \
     && echo '[ -f /etc/danger-lab.env ] && . /etc/danger-lab.env' >> /home/lab/.bashrc
 
-# Copy tmux config for lab user too
-RUN cp /root/.tmux.conf /home/lab/.tmux.conf && chown lab:lab /home/lab/.tmux.conf
-
 # ── SSH configuration ─────────────────────────────────────────────────────────
 RUN mkdir -p /var/run/sshd /etc/ssh/host-keys /root/.ssh \
     && chmod 700 /root/.ssh
@@ -135,6 +132,9 @@ COPY config/sshd_config /etc/ssh/sshd_config
 
 # ── tmux configuration ────────────────────────────────────────────────────────
 COPY config/tmux.conf /root/.tmux.conf
+
+# Copy tmux config for lab user too
+RUN cp /root/.tmux.conf /home/lab/.tmux.conf && chown lab:lab /home/lab/.tmux.conf
 
 # ── Shell environment ─────────────────────────────────────────────────────────
 COPY config/bashrc_extra /etc/bash.bashrc.d/danger-lab.sh
