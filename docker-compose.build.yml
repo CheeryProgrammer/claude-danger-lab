@@ -1,0 +1,8 @@
+services:
+  claude:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GO_VERSION: "latest"
+    pull_policy: build

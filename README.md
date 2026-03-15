@@ -75,6 +75,8 @@ tmux attach -t claude                     # attach to Claude
 # Ctrl-a d  — detach (Claude keeps running)
 docker compose down                       # stop
 docker compose pull && docker compose up -d  # update
+# build locally instead of pulling:
+docker compose -f docker-compose.yml -f docker-compose.build.yml build && docker compose up -d
 ```
 
 ---

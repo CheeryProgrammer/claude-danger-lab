@@ -60,9 +60,8 @@ RUN ARCH=$(dpkg --print-architecture) \
     && tar -C /usr/local -xzf "go${GO_VERSION}.linux-${ARCH}.tar.gz" \
     && rm "go${GO_VERSION}.linux-${ARCH}.tar.gz"
 
-ENV PATH="/usr/local/go/bin:/root/go/bin:${PATH}"
-ENV GOPATH="/root/go"
-# auto: use toolchain version from go.mod if it differs from the installed one
+ENV PATH="/usr/local/go/bin:/home/lab/go/bin:${PATH}"
+ENV GOPATH="/home/lab/go"
 ENV GOTOOLCHAIN=auto
 
 # ── Go tools ─────────────────────────────────────────────────────────────────
@@ -100,7 +99,7 @@ RUN git clone --depth 1 --branch stable \
 
 ENV PATH="/opt/flutter/bin:${PATH}"
 ENV FLUTTER_ROOT="/opt/flutter"
-ENV PUB_CACHE="/root/.pub-cache"
+ENV PUB_CACHE="/home/lab/.pub-cache"
 
 # Pre-download Dart SDK and web artifacts; skip mobile/desktop platforms
 RUN flutter precache --web --no-android --no-ios --no-linux --no-macos --no-windows \
@@ -109,6 +108,24 @@ RUN flutter precache --web --no-android --no-ios --no-linux --no-macos --no-wind
 
 # ── Claude Code ───────────────────────────────────────────────────────────────
 RUN npm install -g @anthropic-ai/claude-code
+
+# ── Non-root user for running Claude ─────────────────────────────────────────
+# Claude refuses --permission-mode bypassPermissions when running as root.
+RUN useradd -m -s /bin/bash -u 1000 lab \
+    && echo 'lab ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
+    && mkdir -p /home/lab/go /home/lab/.claude /home/lab/.pub-cache \
+    && chown -R lab:lab /home/lab
+
+# lab user shell environment
+RUN echo 'export PATH="/usr/local/go/bin:/home/lab/go/bin:/opt/flutter/bin:$PATH"' >> /home/lab/.bashrc \
+    && echo 'export GOPATH="/home/lab/go"' >> /home/lab/.bashrc \
+    && echo 'export GOTOOLCHAIN=auto' >> /home/lab/.bashrc \
+    && echo 'export FLUTTER_ROOT="/opt/flutter"' >> /home/lab/.bashrc \
+    && echo 'export PUB_CACHE="/home/lab/.pub-cache"' >> /home/lab/.bashrc \
+    && echo '[ -f /etc/danger-lab.env ] && . /etc/danger-lab.env' >> /home/lab/.bashrc
+
+# Copy tmux config for lab user too
+RUN cp /root/.tmux.conf /home/lab/.tmux.conf && chown lab:lab /home/lab/.tmux.conf
 
 # ── SSH configuration ─────────────────────────────────────────────────────────
 RUN mkdir -p /var/run/sshd /etc/ssh/host-keys /root/.ssh \
