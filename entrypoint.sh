@@ -112,12 +112,15 @@ setup_workspace() {
     chown "${LAB_USER}:${LAB_USER}" /workspace
 }
 
-# ── 6b. Pre-accept Claude's workspace trust dialog ───────────────────────────
-# Claude Code shows a one-time "Do you trust the files in this folder?" dialog on
-# first launch in any directory and refuses to start non-interactively until it's
-# accepted ("Error: Workspace not trusted. Please run `claude` in <dir> first…").
-# Trust is recorded per-directory in ~/.claude.json. Seed it here so unattended
-# `claude remote-control` starts without blocking on the dialog.
+# ── 6b. Pre-accept Claude's interactive startup prompts ──────────────────────
+# `claude remote-control` blocks unattended startup on two one-time prompts, both
+# gated by flags in the lab user's ~/.claude.json:
+#   • Workspace trust ("Do you trust the files in this folder?") — refuses to start
+#     until accepted; recorded per-directory under projects[dir].hasTrustDialogAccepted.
+#   • Remote Control consent ("Enable Remote Control? (y/n)") — process.exit(0) if
+#     not answered "y"; the whole block is skipped when top-level remoteDialogSeen
+#     is true (verified in the v2.1.x bridge startup path).
+# Seed all of them here so the session starts non-interactively.
 trust_project() {
     local dir="$1"
     local cfg="${LAB_HOME}/.claude.json"
@@ -128,15 +131,16 @@ trust_project() {
 
     if jq --arg dir "${dir}" '
             .hasCompletedOnboarding = true
+            | .remoteDialogSeen = true
             | .projects[$dir] = ((.projects[$dir] // {})
                 + {hasTrustDialogAccepted: true, hasCompletedProjectOnboarding: true})
         ' "${cfg}" > "${tmp}" 2>/dev/null; then
         mv "${tmp}" "${cfg}"
         chown "${LAB_USER}:${LAB_USER}" "${cfg}"
-        log "[$(basename "${dir}")] Workspace trust pre-accepted."
+        log "[$(basename "${dir}")] Workspace trust + remote-control consent pre-accepted."
     else
         rm -f "${tmp}"
-        warn "[$(basename "${dir}")] Failed to pre-accept workspace trust (invalid ${cfg}?)."
+        warn "[$(basename "${dir}")] Failed to pre-accept startup prompts (invalid ${cfg}?)."
     fi
 }
 
