@@ -112,6 +112,34 @@ setup_workspace() {
     chown "${LAB_USER}:${LAB_USER}" /workspace
 }
 
+# ── 6b. Pre-accept Claude's workspace trust dialog ───────────────────────────
+# Claude Code shows a one-time "Do you trust the files in this folder?" dialog on
+# first launch in any directory and refuses to start non-interactively until it's
+# accepted ("Error: Workspace not trusted. Please run `claude` in <dir> first…").
+# Trust is recorded per-directory in ~/.claude.json. Seed it here so unattended
+# `claude remote-control` starts without blocking on the dialog.
+trust_project() {
+    local dir="$1"
+    local cfg="${LAB_HOME}/.claude.json"
+    local tmp
+    tmp=$(mktemp)
+
+    [ -f "${cfg}" ] || echo '{}' > "${cfg}"
+
+    if jq --arg dir "${dir}" '
+            .hasCompletedOnboarding = true
+            | .projects[$dir] = ((.projects[$dir] // {})
+                + {hasTrustDialogAccepted: true, hasCompletedProjectOnboarding: true})
+        ' "${cfg}" > "${tmp}" 2>/dev/null; then
+        mv "${tmp}" "${cfg}"
+        chown "${LAB_USER}:${LAB_USER}" "${cfg}"
+        log "[$(basename "${dir}")] Workspace trust pre-accepted."
+    else
+        rm -f "${tmp}"
+        warn "[$(basename "${dir}")] Failed to pre-accept workspace trust (invalid ${cfg}?)."
+    fi
+}
+
 # ── 7. Per-project instructions ───────────────────────────────────────────────
 apply_project_instructions() {
     local name="$1"
@@ -161,6 +189,7 @@ tmux_run_as_lab() {
 
 start_claude_window() {
     local session="$1" name="$2" dir="$3" first="$4"
+    trust_project "${dir}"
     if [ "${first}" = "true" ]; then
         tmux rename-window -t "${session}:1" "${name}"
         tmux_run_as_lab "${session}:${name}" "${dir}" "${CLAUDE_CMD} --name '${name}'"
@@ -181,6 +210,7 @@ setup_tmux_session() {
 
     if [ -z "${projects}" ]; then
         log "No projects configured — using /workspace."
+        trust_project "/workspace"
         tmux rename-window -t "${session}:1" "claude"
         tmux_run_as_lab "${session}:claude" "/workspace" "${CLAUDE_CMD} --name 'danger-lab'"
         return
@@ -201,6 +231,7 @@ setup_tmux_session() {
 
     if [ "${first}" = "true" ]; then
         warn "All clones failed — falling back to /workspace."
+        trust_project "/workspace"
         tmux rename-window -t "${session}:1" "claude"
         tmux_run_as_lab "${session}:claude" "/workspace" "${CLAUDE_CMD} --name 'danger-lab'"
     fi
