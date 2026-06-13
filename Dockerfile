@@ -41,7 +41,7 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Node.js (required by Claude Code) ────────────────────────────────────────
+# ── Node.js (for JS/TS projects; Claude's native install bundles its own) ────
 RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
         | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] \
@@ -107,24 +107,32 @@ RUN flutter precache --web --no-android --no-ios --no-linux --no-macos --no-wind
     && flutter config --no-analytics \
     && flutter --version
 
-# ── Claude Code ───────────────────────────────────────────────────────────────
-RUN npm install -g @anthropic-ai/claude-code
-
 # ── Non-root user for running Claude ─────────────────────────────────────────
 # Claude refuses --permission-mode bypassPermissions when running as root.
 RUN useradd -m -s /bin/bash -u 1000 lab \
     && echo 'lab ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
-    && mkdir -p /home/lab/go /home/lab/.claude /home/lab/.pub-cache \
+    && mkdir -p /home/lab/go /home/lab/.claude /home/lab/.pub-cache /home/lab/.local/bin \
     && chown -R lab:lab /home/lab
 
 # lab user shell environment
-RUN echo 'export PATH="/usr/local/go/bin:/home/lab/go/bin:/opt/flutter/bin:$PATH"' >> /home/lab/.bashrc \
+RUN echo 'export PATH="/home/lab/.local/bin:/usr/local/go/bin:/home/lab/go/bin:/opt/flutter/bin:$PATH"' >> /home/lab/.bashrc \
     && echo 'export GOPATH="/home/lab/go"' >> /home/lab/.bashrc \
     && echo 'export GOTOOLCHAIN=auto' >> /home/lab/.bashrc \
     && echo 'export FLUTTER_ROOT="/opt/flutter"' >> /home/lab/.bashrc \
     && echo 'export PUB_CACHE="/home/lab/.pub-cache"' >> /home/lab/.bashrc \
     && echo '[ -f /etc/danger-lab.env ] && . /etc/danger-lab.env' >> /home/lab/.bashrc \
     && echo '[ -f ~/.bashrc ] && . ~/.bashrc' >> /home/lab/.bash_profile
+
+# ── Claude Code (native installer, run as lab so auto-update works) ───────────
+# The deprecated `npm install -g` puts Claude in a root-owned dir, so its
+# background auto-updater can't write there when Claude runs as the lab user —
+# updates fail silently and the CLI only moves when the image is rebuilt.
+# The native installer drops the binary in /home/lab/.local/bin (lab-writable),
+# re-enabling self-update. /home/lab/.local is a persistent volume (see
+# docker-compose.yml) so updates also survive container recreation.
+USER lab
+RUN export HOME=/home/lab && curl -fsSL https://claude.ai/install.sh | bash
+USER root
 
 # ── SSH configuration ─────────────────────────────────────────────────────────
 RUN mkdir -p /var/run/sshd /etc/ssh/host-keys /root/.ssh \

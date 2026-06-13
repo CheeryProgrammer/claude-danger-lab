@@ -41,6 +41,9 @@ services:
       # Claude Code state and memory (sessions, history, settings)
       - claude-memory:/home/lab/.claude
 
+      # Claude Code native install — keeps the auto-updated CLI across recreation
+      - claude-local:/home/lab/.local
+
       # SSH host keys persist so the fingerprint never changes after first run
       - ssh-host-keys:/etc/ssh/host-keys
 
@@ -66,6 +69,8 @@ volumes:
   workspace-data:
     driver: local
   claude-memory:
+    driver: local
+  claude-local:
     driver: local
   ssh-host-keys:
     driver: local

@@ -127,7 +127,7 @@ Then just `ssh danger-lab`. Mobile: Termius or Blink Shell, same settings.
 
 Ubuntu 22.04 · tmux · git · gh · Go (latest) · Node.js · Claude Code · OpenSSH
 
-Persistent volumes: `claude-memory` (`~/.claude`) · `ssh-host-keys` (`/etc/ssh/host-keys`) · workspace (bind mount)
+Persistent volumes: `claude-memory` (`~/.claude`) · `claude-local` (`~/.local`, the auto-updating Claude CLI) · `ssh-host-keys` (`/etc/ssh/host-keys`) · workspace (bind mount)
 
 ---
 

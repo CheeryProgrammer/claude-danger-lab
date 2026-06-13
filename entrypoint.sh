@@ -81,6 +81,11 @@ setup_claude_memory() {
     mkdir -p "${LAB_HOME}/.claude"
     chown -R "${LAB_USER}:${LAB_USER}" "${LAB_HOME}/.claude"
 
+    # Claude's native install lives here (mounted volume); keep it lab-owned so
+    # the background auto-updater can write new versions.
+    mkdir -p "${LAB_HOME}/.local/bin"
+    chown -R "${LAB_USER}:${LAB_USER}" "${LAB_HOME}/.local"
+
     local global_src="/etc/danger-lab/instructions/global.md"
     if [ -f "${global_src}" ]; then
         cp "${global_src}" "${LAB_HOME}/.claude/CLAUDE.md"
