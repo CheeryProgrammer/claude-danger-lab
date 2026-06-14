@@ -61,6 +61,19 @@ setup_env_file() {
         printf 'export GITHUB_TOKEN=%s\n' "${GITHUB_TOKEN}" >> /etc/danger-lab.env
         log "GITHUB_TOKEN set."
     fi
+
+    # Remote Control eligibility: seed oauthAccount org info so `claude
+    # remote-control` can determine the org on a fresh container (the
+    # oauthAccount cache in ~/.claude.json isn't on the persisted volume).
+    # Claude only consumes these when all three are present.
+    if [ -n "${CLAUDE_CODE_ACCOUNT_UUID:-}" ] \
+        && [ -n "${CLAUDE_CODE_USER_EMAIL:-}" ] \
+        && [ -n "${CLAUDE_CODE_ORGANIZATION_UUID:-}" ]; then
+        printf 'export CLAUDE_CODE_ACCOUNT_UUID=%s\n'      "${CLAUDE_CODE_ACCOUNT_UUID}"      >> /etc/danger-lab.env
+        printf 'export CLAUDE_CODE_USER_EMAIL=%s\n'        "${CLAUDE_CODE_USER_EMAIL}"        >> /etc/danger-lab.env
+        printf 'export CLAUDE_CODE_ORGANIZATION_UUID=%s\n' "${CLAUDE_CODE_ORGANIZATION_UUID}" >> /etc/danger-lab.env
+        log "Remote Control org identity set."
+    fi
 }
 
 # ── 4. GitHub git config ──────────────────────────────────────────────────────
