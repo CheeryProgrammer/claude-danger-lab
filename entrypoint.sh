@@ -15,11 +15,14 @@ LAB_HOME="/home/lab"
 CLAUDE_JSON="${LAB_HOME}/.claude/.claude.json"
 
 # Claude runs as $LAB_USER (non-root) so --permission-mode bypassPermissions works.
+# --spawn=worktree gives each remotely-spawned session its own isolated git
+# worktree (set up front so the first launch doesn't block on the interactive
+# "Choose [1/2]" spawn-mode prompt). Non-git projects auto-fall-back to same-dir.
 DANGEROUS="${DANGEROUS_MODE:-false}"
 if [ "${DANGEROUS}" = "true" ]; then
-    CLAUDE_CMD="claude remote-control --permission-mode bypassPermissions"
+    CLAUDE_CMD="claude remote-control --spawn=worktree --permission-mode bypassPermissions"
 else
-    CLAUDE_CMD="claude remote-control"
+    CLAUDE_CMD="claude remote-control --spawn=worktree"
 fi
 
 # ── 1. SSH authorised keys ────────────────────────────────────────────────────
