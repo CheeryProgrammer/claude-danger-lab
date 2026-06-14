@@ -9,6 +9,11 @@ PROJECTS_CONF="/etc/danger-lab/projects.conf"
 LAB_USER="lab"
 LAB_HOME="/home/lab"
 
+# Claude's config dir is the persistent /home/lab/.claude volume (CLAUDE_CONFIG_DIR
+# in the lab user's env), so .claude.json — login/org info, trust, consent — lives
+# inside the volume and survives container recreation. This path must match that.
+CLAUDE_JSON="${LAB_HOME}/.claude/.claude.json"
+
 # Claude runs as $LAB_USER (non-root) so --permission-mode bypassPermissions works.
 DANGEROUS="${DANGEROUS_MODE:-false}"
 if [ "${DANGEROUS}" = "true" ]; then
@@ -61,19 +66,6 @@ setup_env_file() {
         printf 'export GITHUB_TOKEN=%s\n' "${GITHUB_TOKEN}" >> /etc/danger-lab.env
         log "GITHUB_TOKEN set."
     fi
-
-    # Remote Control eligibility: seed oauthAccount org info so `claude
-    # remote-control` can determine the org on a fresh container (the
-    # oauthAccount cache in ~/.claude.json isn't on the persisted volume).
-    # Claude only consumes these when all three are present.
-    if [ -n "${CLAUDE_CODE_ACCOUNT_UUID:-}" ] \
-        && [ -n "${CLAUDE_CODE_USER_EMAIL:-}" ] \
-        && [ -n "${CLAUDE_CODE_ORGANIZATION_UUID:-}" ]; then
-        printf 'export CLAUDE_CODE_ACCOUNT_UUID=%s\n'      "${CLAUDE_CODE_ACCOUNT_UUID}"      >> /etc/danger-lab.env
-        printf 'export CLAUDE_CODE_USER_EMAIL=%s\n'        "${CLAUDE_CODE_USER_EMAIL}"        >> /etc/danger-lab.env
-        printf 'export CLAUDE_CODE_ORGANIZATION_UUID=%s\n' "${CLAUDE_CODE_ORGANIZATION_UUID}" >> /etc/danger-lab.env
-        log "Remote Control org identity set."
-    fi
 }
 
 # ── 4. GitHub git config ──────────────────────────────────────────────────────
@@ -105,18 +97,8 @@ setup_claude_memory() {
         chown "${LAB_USER}:${LAB_USER}" "${LAB_HOME}/.claude/CLAUDE.md"
         log "Global instructions loaded."
     fi
-
-    # .claude.json lives outside the volume — restore from backup if missing
-    local cfg="${LAB_HOME}/.claude.json"
-    if [ ! -f "${cfg}" ]; then
-        local latest
-        latest=$(ls -t "${LAB_HOME}/.claude/backups/.claude.json.backup."* 2>/dev/null | head -1)
-        if [ -n "${latest}" ]; then
-            cp "${latest}" "${cfg}"
-            chown "${LAB_USER}:${LAB_USER}" "${cfg}"
-            log "Restored Claude config from backup."
-        fi
-    fi
+    # .claude.json now lives inside the .claude volume (CLAUDE_CONFIG_DIR), so it
+    # persists across recreation on its own — no backup/restore dance needed.
 }
 
 # ── 6. Workspace ownership ────────────────────────────────────────────────────
@@ -136,7 +118,7 @@ setup_workspace() {
 # Seed all of them here so the session starts non-interactively.
 trust_project() {
     local dir="$1"
-    local cfg="${LAB_HOME}/.claude.json"
+    local cfg="${CLAUDE_JSON}"
     local tmp
     tmp=$(mktemp)
 

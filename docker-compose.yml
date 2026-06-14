@@ -18,14 +18,6 @@ services:
       # Method A (recommended): set ANTHROPIC_API_KEY in .env
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
 
-      # ── Remote Control eligibility (claude.ai subscription auth) ─────────────
-      # Seeds oauthAccount.organizationUuid so `claude remote-control` can
-      # determine your org on a fresh container. See .env.example for how to
-      # find these values. Ignored when blank / when using ANTHROPIC_API_KEY.
-      - CLAUDE_CODE_ACCOUNT_UUID=${CLAUDE_CODE_ACCOUNT_UUID:-}
-      - CLAUDE_CODE_USER_EMAIL=${CLAUDE_CODE_USER_EMAIL:-}
-      - CLAUDE_CODE_ORGANIZATION_UUID=${CLAUDE_CODE_ORGANIZATION_UUID:-}
-
       # ── GitHub authentication ───────────────────────────────────────────────
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
 

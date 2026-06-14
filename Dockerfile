@@ -115,11 +115,16 @@ RUN useradd -m -s /bin/bash -u 1000 lab \
     && chown -R lab:lab /home/lab
 
 # lab user shell environment
+# CLAUDE_CONFIG_DIR points Claude's config (incl. .claude.json, which holds the
+# login/org info) inside /home/lab/.claude — a persistent volume — so a one-time
+# `claude login` survives container recreation. Without it the config file sits
+# at /home/lab/.claude.json (outside the volume) and is lost on every recreate.
 RUN echo 'export PATH="/home/lab/.local/bin:/usr/local/go/bin:/home/lab/go/bin:/opt/flutter/bin:$PATH"' >> /home/lab/.bashrc \
     && echo 'export GOPATH="/home/lab/go"' >> /home/lab/.bashrc \
     && echo 'export GOTOOLCHAIN=auto' >> /home/lab/.bashrc \
     && echo 'export FLUTTER_ROOT="/opt/flutter"' >> /home/lab/.bashrc \
     && echo 'export PUB_CACHE="/home/lab/.pub-cache"' >> /home/lab/.bashrc \
+    && echo 'export CLAUDE_CONFIG_DIR="/home/lab/.claude"' >> /home/lab/.bashrc \
     && echo '[ -f /etc/danger-lab.env ] && . /etc/danger-lab.env' >> /home/lab/.bashrc \
     && echo '[ -f ~/.bashrc ] && . ~/.bashrc' >> /home/lab/.bash_profile
 
